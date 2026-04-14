@@ -13,6 +13,7 @@ This is a user group that uses RISC-V chips such as WCH's CH32V series.
 - https://github.com/ch32-riscv-ug/CH32V20x
 - https://github.com/ch32-riscv-ug/CH32V307
 - https://github.com/ch32-riscv-ug/CH32X035
+- https://github.com/ch32-riscv-ug/CH32H417
 
 This is a repository that compiles information such as data sheets created for each EVT file.
 
