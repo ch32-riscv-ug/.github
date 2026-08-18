@@ -4,6 +4,10 @@ This is a user group that uses RISC-V chips such as WCH's CH32V series.
 
 # Repositories
 
+## Common
+
+- https://github.com/ch32-riscv-ug/WCH-common
+
 ## EVT
 
 - https://github.com/ch32-riscv-ug/CH32L103
