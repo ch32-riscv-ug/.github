@@ -1,0 +1,66 @@
+name: Update organization profile
+
+# The profile page is generated from the tables in ch32-riscv-ug/ch32-device-data
+# (generated/readme/_profile.md) and fetched daily, the same way the mirror
+# repositories fetch their READMEs. Edit the generator there, not this file's
+# output. A failed fetch keeps the existing page and warns.
+# プロフィールページはch32-device-dataのtablesから生成されたものを日次で取得する。
+# 取得失敗は警告のみで既存ページを保持する。
+
+on:
+  schedule:
+    # Daily 15:07 UTC, together with the document mirrors, two hours after the
+    # catalogue (and the generated pages) refresh at 13:07 UTC.
+    - cron: '07 15 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch the generated profile page
+        run: |
+          url="https://raw.githubusercontent.com/ch32-riscv-ug/ch32-device-data/main/generated/readme/_profile.md"
+          code=$(curl -sSL --http1.1 --connect-timeout 30 --max-time 120 \
+            -o profile/README.md.download -w '%{http_code}' "$url") || code="000"
+          if [ "$code" = "200" ] && head -1 profile/README.md.download | grep -q "^# "; then
+            mv -f profile/README.md.download profile/README.md
+            echo "profile/README.md updated"
+          else
+            rm -f profile/README.md.download
+            echo "::warning::profile not updated (HTTP ${code}); keeping the existing one"
+          fi
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "update profile (automated)"
+            git push
+          fi
+
+      # Keep the daily schedule from being auto-disabled after 60 days of
+      # repository inactivity.
+      - name: Keepalive (avoid 60-day schedule auto-disable)
+        run: |
+          age_days=$(( ( $(date +%s) - $(git log -1 --format=%ct) ) / 86400 ))
+          echo "Last commit age: ${age_days} day(s)"
+          if [ "$age_days" -ge 50 ]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "keepalive: prevent scheduled workflow auto-disable"
+            git push
+          fi
